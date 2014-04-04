@@ -15,11 +15,9 @@
 	<script type="text/javascript">
 		
 		$(function (){
-			var file;
-			var blob;
+			var file, blob;
 
-			function handleFileSelect(evt){
-				console.log('uploaded');
+			document.getElementById('files').addEventListener('change', function (evt){
 				var files = document.getElementById('files').files;
 				if (!files.length) {
 					alert('Please select a file!');
@@ -27,27 +25,17 @@
 				}
 
 				file = files[0];
-				var start = 0;
-				var stop = file.size - 1;
-
-				// var reader = new FileReader();
-
-    // 			// If we use onloadend, we need to check the readyState.
-    // 			reader.onloadend = function(evt) {
-    //   				if (evt.target.readyState == FileReader.DONE) { // DONE == 2
-    //   					f = evt.target.result;
-    //   				}
-  		// 		};
-
-  				blob = file.slice(start, stop + 1);
-  				//reader.readAsBinaryString(blob);
-    		}
-
-			document.getElementById('files').addEventListener('change', handleFileSelect, false);
+  				blob = file.slice(0, file.size);
+    		}, false);
 			
-			function addAlert (message){
-
-
+			function addAlert (strong, message){
+				var alert = $('<div class="alert alert-success alert-dismissable display:none"><span class="glyphicon glyphicon-export" /><strong> ' 
+						+ strong 
+						+ '</strong> ' 
+						+ message
+						+ '</div>');
+				$(".alerts").append(alert)
+				alert.fadeIn();
 			}
 
 			$(".menu-send").hide();
@@ -55,7 +43,7 @@
 
 			$("#menu-sr-send").click(function (){
 				$(".menu-sr").hide();
-				$(".menu-send").show();
+				$(".menu-send").fadeIn();
 				$("#send-file").click(function (){
 					var peer = new Peer({key:'yqzjutu8hfv9rudi'});
 					console.log($("#id-sender").val());
@@ -72,9 +60,11 @@
 					  		var data = {
 					  			id:'file',
 					  			filename: _filename,
-					  			blob: blob
+					  			blob: blob, 
+					  			size: file.size
 					  		}
 					  		conn.send(data);	
+					  		addAlert('File sent!', 'Your file ' + data.filename + ' has transformed and rolled out...');
 					  	}
  					 	
 					});
@@ -82,19 +72,16 @@
 			});
 			$("#menu-sr-receive").click(function (){
 				$(".menu-sr").hide();
-				$(".menu-receive").show();
+				$(".menu-receive").fadeIn();
 				var num = Math.floor(Math.random() * 90000) + 10000;
 				var peer = new Peer(num.toString(), {key:'yqzjutu8hfv9rudi'});
 				$("#pin").text(' Your PIN: ' + num)
 				peer.on('connection', function(conn){
 					conn.on('open', function() {
-  						// Receive messages
   						console.log('connected to sender');
   						conn.on('data', function(data) {
-  							// console.log(data);
   							if (data.id == 'file'){
   								if (data.blob.constructor === ArrayBuffer) {
-
   									var saveData = (function () {
   										var a = document.createElement("a");
   										document.body.appendChild(a);
@@ -109,21 +96,13 @@
   											window.URL.revokeObjectURL(url);
   										};
   									}());
-  									saveData(data.blob, data.filename);
-
-  									// var dataView = new Uint8Array(data);
-  									// var dataBlob = new Blob([dataView]);
-  									// var url = window.URL.createObjectURL(dataBlob);
-  									// console.log(url);
-  									// $("#test").attr("href", url);
+  									var r=confirm("Someone is trying to send a file... \n " + data.filename + " (" + data.size/1000 + " K)");
+  									if (r)saveData(data.blob, data.filename);
+  									
         						}
   							}
-  							 
   						});
-
- 					 	// Send messages
- 					 	//conn.send('Hello!');
- 					 });
+ 					});
 				})
 			});
 		});
@@ -165,21 +144,25 @@
 			<input type="file" id="files" name="file" data-classInput="input-small" data-classButton="btn btn-info"/> 
 			<p></p>
 			<div class="input-group input-group-lg">
-				<input type="text" class="form-control" placeholder="Enter Reciepient PIN" id="id-sender">
+				<input type="tel" class="form-control" placeholder="Enter Reciepient PIN" id="id-sender">
 				<span class="input-group-btn">
 					<button class="btn btn-primary btn-lg" id="send-file">
-						<span class="glyphicon glyphicon-send"></span> Send!
+						<span class="glyphicon glyphicon-send"></span> Send
 					</button>
 				</span>
 			</div>
+			<p></p>
+			<div class="alerts"></div>
+			
 		</div>
 
 		<div class="strap menu-receive">
-			<div class="alert alert-info alert-dismissable">
-				<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-				<span class="glyphicon glyphicon-th"></span><strong id="pin"> Your pin:</strong> Waiting on sender...
+			<div class="alerts">
+				<div class="alert alert-info alert-dismissable">
+					<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+					<span class="glyphicon glyphicon-th"></span><strong id="pin"> Your pin:</strong> Waiting on sender...
+				</div>
 			</div>
-			<a target="_blank" href="" id="test">file</a>
 		</div>
 
 	</div><!-- /.container -->
