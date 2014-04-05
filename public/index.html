@@ -13,71 +13,25 @@
 	<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 	<script src="http://cdn.peerjs.com/0.3/peer.js"></script>
 	<script type="text/javascript">
-		
+		function getURLParameter(name) {
+			return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null
+		}
 		$(function (){
 			var file, blob;
+			var _id = getURLParameter("id");
 
-			document.getElementById('files').addEventListener('change', function (evt){
-				var files = document.getElementById('files').files;
-				if (!files.length) {
-					alert('Please select a file!');
-					return;
-				}
-
-				file = files[0];
-  				blob = file.slice(0, file.size);
-    		}, false);
-			
-			function addAlert (strong, message){
-				var alert = $('<div class="alert alert-success alert-dismissable display:none"><span class="glyphicon glyphicon-export" /><strong> ' 
-						+ strong 
-						+ '</strong> ' 
-						+ message
-						+ '</div>');
-				$(".alerts").append(alert)
-				alert.fadeIn();
-			}
-
+			$(".menu-recieve").hide();
 			$(".menu-send").hide();
-			$(".menu-receive").hide();
+			$('.menu-sr').hide();
+			
+			if (_id){
+				$('.menu-recieve').show();
 
-			$("#menu-sr-send").click(function (){
-				$(".menu-sr").hide();
-				$(".menu-send").fadeIn();
-				$("#send-file").click(function (){
-					var peer = new Peer({key:'yqzjutu8hfv9rudi'});
-					console.log($("#id-sender").val());
-					var conn = peer.connect($("#id-sender").val());
-					conn.on('open', function() {
-  						// Receive messages
-  						console.log('connected to recipient');
-  						conn.on('data', function(data) {
-  							console.log('Received', data);
-  						});
+				addAlert('Receiving file...', 'Connecting to peer, and handling incoming file...');
 
-					  	if (blob){
-					  		var _filename = $('input[type=file]').val().replace(/C:\\fakepath\\/i, '');
-					  		var data = {
-					  			id:'file',
-					  			filename: _filename,
-					  			blob: blob, 
-					  			size: file.size
-					  		}
-					  		conn.send(data);	
-					  		addAlert('File sent!', 'Your file ' + data.filename + ' has transformed and rolled out...');
-					  	}
- 					 	
-					});
-				});
-			});
-			$("#menu-sr-receive").click(function (){
-				$(".menu-sr").hide();
-				$(".menu-receive").fadeIn();
-				var num = Math.floor(Math.random() * 90000) + 10000;
-				var peer = new Peer(num.toString(), {key:'yqzjutu8hfv9rudi'});
-				$("#pin").text(' Your PIN: ' + num)
-				peer.on('connection', function(conn){
-					conn.on('open', function() {
+				var peer = new Peer({key:'yqzjutu8hfv9rudi'});
+				var conn = peer.connect(_id);
+				conn.on('open', function() {
   						console.log('connected to sender');
   						conn.on('data', function(data) {
   							if (data.id == 'file'){
@@ -96,15 +50,69 @@
   											window.URL.revokeObjectURL(url);
   										};
   									}());
-  									var r=confirm("Someone is trying to send a file... \n " + data.filename + " (" + data.size/1000 + " K)");
-  									if (r)saveData(data.blob, data.filename);
-  									
+  									// var r=confirm("Someone is trying to send a file... \n " + data.filename + " (" + data.size/1000 + " K)");
+  									// if (r)
+  									saveData(data.blob, data.filename);
+  									addAlert('Downloading...', 'File is being downloaded from peer...');
         						}
   							}
   						});
- 					});
-				})
-			});
+  					});
+
+			}else {
+				$(".menu-sr").show();
+				$("#menu-sr-send").click(function (){
+					$(".menu-sr").hide();
+					$(".menu-send").fadeIn();
+				});
+
+				document.getElementById('files').addEventListener('change', function (evt){
+				var files = document.getElementById('files').files;
+				if (!files.length) {
+					alert('Please select a file!');
+					return;
+				}
+
+				file = files[0];
+				blob = file.slice(0, file.size);
+				var random = Math.random().toString(36).substring(7);
+				var _a = "<a href='quickdrop.kuficoding.com/?id=" + random + "'>quickdrop.kuficoding.com/?id="+random+"</a>";
+				$('#_url').append(_a);
+				var peer = new Peer(random, {key:'yqzjutu8hfv9rudi'});
+				peer.on('connection', function (conn){
+					conn.on('open', function() {
+  						// Receive messages
+  						console.log('connected to sender');
+  						conn.on('data', function(data) {
+  							console.log('Received', data);
+  						});
+
+  						if (blob){
+  							var _filename = $('input[type=file]').val().replace(/C:\\fakepath\\/i, '');
+  							var data = {
+  								id:'file',
+  								filename: _filename,
+  								blob: blob, 
+  								size: file.size
+  							}
+  							conn.send(data);	
+  							addAlert('File sent!', 'Your file ' + data.filename + ' has transformed and rolled out...');
+  						}
+  					});
+				});	
+  				}, false);
+			} console.log(_id);
+			
+			
+			function addAlert (strong, message){
+				var alert = $('<div class="alert alert-success alert-dismissable display:none"><span class="glyphicon glyphicon-export" /><strong> ' 
+						+ strong 
+						+ '</strong> ' 
+						+ message
+						+ '</div>');
+				$(".alerts").append(alert)
+				alert.fadeIn();
+			}
 		});
 	</script>
 
@@ -122,7 +130,9 @@
 			</div>
 			<div class="collapse navbar-collapse">
 				<ul class="nav navbar-nav">
-					<li><a href="https://github.com/sameid">github</a></li>
+					<li><a href="https://github.com/sameid"><img width="46" height="46" src="./assets/github.png" /></a></li>
+					<li><a href="https://www.facebook.com/sameid.usmani"><img width="46" height="46" src="./assets/facebook.png" /></a></li>
+					<li><a href="https://plus.google.com/u/0/109561119206915176746/about/p/pub"><img width="46" height="46" src="./assets/google-plus.png" /></a></li>
 				</ul>
 			</div><!--/.nav-collapse -->
 		</div>
@@ -135,35 +145,20 @@
 				<span class="glyphicon glyphicon-send"></span> Send a file
 			</button> 
 			<p></p>
-			<button class="btn btn-success btn-lg" id="menu-sr-receive">
-				<span class="glyphicon glyphicon-import"></span> Receive a file
-			</button>
 		</div>
 
 		<div class="strap menu-send">
 			<input type="file" id="files" name="file" data-classInput="input-small" data-classButton="btn btn-info"/> 
 			<p></p>
-			<div class="input-group input-group-lg">
-				<input type="tel" class="form-control" placeholder="Enter Reciepient PIN" id="id-sender">
-				<span class="input-group-btn">
-					<button class="btn btn-primary btn-lg" id="send-file">
-						<span class="glyphicon glyphicon-send"></span> Send
-					</button>
-				</span>
-			</div>
+			<div id="_url" ></div>
 			<p></p>
 			<div class="alerts"></div>
-			
 		</div>
 
-		<div class="strap menu-receive">
-			<div class="alerts">
-				<div class="alert alert-info alert-dismissable">
-					<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-					<span class="glyphicon glyphicon-th"></span><strong id="pin"> Your pin:</strong> Waiting on sender...
-				</div>
-			</div>
+		<div class="strap menu-recieve">
+			<div class="alerts"></div>
 		</div>
+
 
 	</div><!-- /.container -->
 </body>
